@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { GoogleMap, LoadScript, Marker, Polyline } from "@react-google-maps/api";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 const containerStyle = {
     width: "100%",
@@ -16,6 +17,8 @@ const center = {
 const GraphMapSwarm = ({ isTracking }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
+    const [selectedNode, setSelectedNode] = useState(null); // Store the selected node
+    const [isPanelOpen, setIsPanelOpen] = useState(false); // Control side panel visibility
 
     const fetchSwarmData = async () => {
         try {
@@ -51,6 +54,12 @@ const GraphMapSwarm = ({ isTracking }) => {
         };
     }, [isTracking]); // Re-run the effect when `isTracking` changes
 
+    // Open side panel with node details
+    const handleMarkerClick = (node) => {
+        setSelectedNode(node);
+        setIsPanelOpen(true);
+    };
+
     return (
         <div>
             <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
@@ -65,6 +74,7 @@ const GraphMapSwarm = ({ isTracking }) => {
                                 url: "/marker.svg", // Custom marker
                                 scaledSize: new google.maps.Size(30, 30),
                             }}
+                            onClick={() => handleMarkerClick(node)} // Handle marker click
                         />
                     ))}
 
@@ -85,6 +95,39 @@ const GraphMapSwarm = ({ isTracking }) => {
                     ))}
                 </GoogleMap>
             </LoadScript>
+
+            {/* Shadcn Side Panel */}
+            <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
+                <SheetTrigger asChild>
+                    {/* Optional: Add a trigger button if needed */}
+                </SheetTrigger>
+                <SheetContent side="right" className="w-96">
+                    <SheetHeader>
+                        <SheetTitle>Node Details</SheetTitle>
+                        <SheetDescription>
+                            Information about the selected node is displayed here.
+                        </SheetDescription>
+                    </SheetHeader>
+                    {selectedNode ? (
+                        <div className="mt-4 space-y-2">
+                            <p>
+                                <strong>Name:</strong> {selectedNode.name}
+                            </p>
+                            <p>
+                                <strong>Latitude:</strong> {selectedNode.lat.toFixed(4)}
+                            </p>
+                            <p>
+                                <strong>Longitude:</strong> {selectedNode.lng.toFixed(4)}
+                            </p>
+                            <p>
+                                <strong>ID:</strong> {selectedNode.id}
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="mt-4">No node selected.</p>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

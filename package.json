@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.5",
     "@radix-ui/react-slot": "^1.1.1",
     "@react-google-maps/api": "^2.20.5",
     "@shadcn/ui": "^0.0.4",
