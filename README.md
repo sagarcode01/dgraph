@@ -1,8 +1,16 @@
-# Drone Swarm Tracking Project
+# Google Maps Graph
 
-This project demonstrates a drone swarm tracking system using **Google Maps API** and a side panel to display individual node information. It features dynamic updates, a professional UI built with **Shadcn** components, and interactive markers.
+This project demonstrates a graph using **Google Maps API** and a side panel to display individual node information.
+
+
+## How it looks
+
+![Map View](docs/images/map-view.png)
+![Side Panel](docs/images/side-panel.png)
+![Node Details](docs/images/node-details.png)
 
 ---
+
 
 ## 🚀 How to Run the Project
 
