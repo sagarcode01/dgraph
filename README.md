@@ -6,8 +6,10 @@ This project demonstrates a graph using **Google Maps API** and a side panel to 
 ## How it looks
 
 ![Map View](docs/images/map-view.png)
+
+------
+
 ![Side Panel](docs/images/side-panel.png)
-![Node Details](docs/images/node-details.png)
 
 ---
 
