@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { GoogleMap, LoadScript, Marker, Polyline } from "@react-google-maps/api";
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 const containerStyle = {
     width: "100%",
@@ -17,118 +16,82 @@ const center = {
 const GraphMapSwarm = ({ isTracking }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
-    const [selectedNode, setSelectedNode] = useState(null); // Store the selected node
-    const [isPanelOpen, setIsPanelOpen] = useState(false); // Control side panel visibility
+    const [renderKey, setRenderKey] = useState(0); // Force re-render key
 
     const fetchSwarmData = async () => {
         try {
             const response = await fetch("/api/swarm-coordinates");
-            const data = await response.json();
+            const newNodes = await response.json();
 
-            // Generate edges dynamically
-            const generatedEdges = data.map((node, index) => {
-                const nextNode = data[(index + 1) % data.length];
-                return { from: node, to: nextNode };
-            });
+            // Step 1: Clear nodes and edges
+            setNodes([]);
+            setEdges([]);
+            setRenderKey((prev) => prev + 1); // Force re-render to clear map
 
-            setNodes(data);
-            setEdges(generatedEdges);
+            // Step 2: Wait for clearing to reflect, then add new data
+            setTimeout(() => {
+                setNodes(newNodes);
+
+                const generatedEdges = newNodes.slice(0, -1).map((node, index) => ({
+                    from: node,
+                    to: newNodes[index + 1],
+                }));
+                setEdges(generatedEdges);
+                setRenderKey((prev) => prev + 1); // Trigger re-render for new data
+            }, 0); // Allow React to process the clearing step
         } catch (error) {
             console.error("Failed to fetch swarm data:", error);
         }
     };
 
     useEffect(() => {
-        // Fetch data initially
         fetchSwarmData();
 
-        // Set interval if tracking is enabled
         let interval;
         if (isTracking) {
             interval = setInterval(fetchSwarmData, 5000);
         }
-
-        // Cleanup interval on unmount or when tracking is disabled
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isTracking]); // Re-run the effect when `isTracking` changes
-
-    // Open side panel with node details
-    const handleMarkerClick = (node) => {
-        setSelectedNode(node);
-        setIsPanelOpen(true);
-    };
+        return () => interval && clearInterval(interval);
+    }, [isTracking]);
 
     return (
-        <div>
-            <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
-                <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={16}>
-                    {/* Markers */}
-                    {nodes.map((node) => (
-                        <Marker
-                            key={node.id}
-                            position={{ lat: node.lat, lng: node.lng }}
-                            title={node.name}
-                            icon={{
-                                url: "/marker.svg", // Custom marker
-                                scaledSize: new google.maps.Size(30, 30),
-                            }}
-                            onClick={() => handleMarkerClick(node)} // Handle marker click
-                        />
-                    ))}
+        <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
+            <GoogleMap
+                key={renderKey} // Force a fresh render with new key
+                mapContainerStyle={containerStyle}
+                center={center}
+                zoom={16}
+            >
+                {/* Markers */}
+                {nodes.map((node) => (
+                    <Marker
+                        key={node.id}
+                        position={{ lat: node.lat, lng: node.lng }}
+                        title={node.name}
+                        icon={{
+                            url: "/marker.svg", // Custom marker
+                            scaledSize: new google.maps.Size(30, 30),
+                        }}
+                    />
+                ))}
 
-                    {/* Polylines */}
-                    {edges.map((edge, index) => (
-                        <Polyline
-                            key={index}
-                            path={[
-                                { lat: edge.from.lat, lng: edge.from.lng },
-                                { lat: edge.to.lat, lng: edge.to.lng },
-                            ]}
-                            options={{
-                                strokeColor: "#FF0000",
-                                strokeOpacity: 0.8,
-                                strokeWeight: 2,
-                            }}
-                        />
-                    ))}
-                </GoogleMap>
-            </LoadScript>
-
-            {/* Shadcn Side Panel */}
-            <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
-                <SheetTrigger asChild>
-                    {/* Optional: Add a trigger button if needed */}
-                </SheetTrigger>
-                <SheetContent side="right" className="w-96">
-                    <SheetHeader>
-                        <SheetTitle>Node Details</SheetTitle>
-                        <SheetDescription>
-                            Information about the selected node is displayed here.
-                        </SheetDescription>
-                    </SheetHeader>
-                    {selectedNode ? (
-                        <div className="mt-4 space-y-2">
-                            <p>
-                                <strong>Name:</strong> {selectedNode.name}
-                            </p>
-                            <p>
-                                <strong>Latitude:</strong> {selectedNode.lat.toFixed(4)}
-                            </p>
-                            <p>
-                                <strong>Longitude:</strong> {selectedNode.lng.toFixed(4)}
-                            </p>
-                            <p>
-                                <strong>ID:</strong> {selectedNode.id}
-                            </p>
-                        </div>
-                    ) : (
-                        <p className="mt-4">No node selected.</p>
-                    )}
-                </SheetContent>
-            </Sheet>
-        </div>
+                {/* Polylines */}
+                {edges.map((edge, index) => (
+                    <Polyline
+                        key={index}
+                        path={[
+                            { lat: edge.from.lat, lng: edge.from.lng },
+                            { lat: edge.to.lat, lng: edge.to.lng },
+                        ]}
+                        options={{
+                            strokeColor: "#FF0000",
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                        }}
+                    />
+                ))}
+            </GoogleMap>
+        </LoadScript>
     );
 };
 
